@@ -1,8 +1,8 @@
 # README
 
 ## Prerequisite
-- docker
-- kubectl
+- Docker for Mac
+- kubectx
 
 ## Docker
 1. docker-composeをビルド && 起動する
@@ -26,6 +26,11 @@ http://localhost:8080
 
 ## Kubernetes
 ### Development (Local)
+0. コンテキストをdocker-desktopにする
+```
+% kubectx docker-desktop
+```
+
 1. applyする
 ```
 % kubectl apply -k k8s/development
@@ -49,6 +54,36 @@ service/rails-service   NodePort   10.96.223.32   <none>        80:30354/TCP   1
 http://localhost:30354
 
 ### Production (GKE)
+1. applyする
+```
+% kubectl apply -k k8s/production
+```
+
+2. 正常に起動したことを確認
+```
+% kubectl get secret,po,deploy,svc,ing
+NAME                                      TYPE                                  DATA   AGE
+secret/cloudsql-certificates-mb26tgtht7   Opaque                                3      23m
+secret/default-token-r88rm                kubernetes.io/service-account-token   3      7h11m
+secret/gcr-8d9bbm699g                     kubernetes.io/dockerconfigjson        1      23m
+
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/rails-deployment-69d59d46b6-ntrwx   2/2     Running   0          5m20s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/rails-deployment   1/1     1            1           23m
+
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+service/kubernetes      ClusterIP   10.105.0.1      <none>        443/TCP        7h11m
+service/rails-service   NodePort    10.105.14.127   <none>        80:31437/TCP   23m
+
+NAME                               HOSTS   ADDRESS      PORTS   AGE
+ingress.extensions/rails-ingress   *       34.98.80.5   80      23m
+```
+
+3. ブラウザから確認 (IPはIngressのアドレス)
+
+http://34.98.80.5
 
 ## CloudSQL with SSL
 ref. https://cloud.google.com/sql/docs/mysql/configure-ssl-instance?hl=ja
