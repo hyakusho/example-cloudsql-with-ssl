@@ -1,0 +1,15 @@
+namespace: default
+secretGenerator:
+  - name: gcr
+    files:
+      - secrets/.dockerconfigjson
+    type: kubernetes.io/dockerconfigjson
+  - name: cloudsql-certificates
+    files:
+      - ./secrets/server-ca.pem
+      - ./secrets/client-key.pem
+      - ./secrets/client-cert.pem
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml

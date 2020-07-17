@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rails-deployment
+  labels:
+    app: rails
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rails
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: rails
+    spec:
+      containers:
+        - name: rails
+          image: asia.gcr.io/default-283602/rails
+          env:
+            - name: DATABASE_URL
+              value: mysql2://root:password@mysql
+            - name: RAILS_ENV
+              value: development
+          ports:
+            - name: rails
+              containerPort: 3000
+          volumeMounts:
+            - name: cloudsql-server-ca
+              mountPath: /var/lib/mysql/ca.pem
+              subPath: ca.pem
+            - name: cloudsql-client-key
+              mountPath: /var/lib/mysql/client-key.pem
+              subPath: client-key.pem
+            - name: cloudsql-client-cert
+              mountPath: /var/lib/mysql/client-cert.pem
+              subPath: client-cert.pem
+        - name: nginx
+          image: asia.gcr.io/default-283602/nginx
+          ports:
+            - name: nginx
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "rails"
+        - ip: "10.83.144.3"
+          hostnames:
+            - "mysql"
+      volumes:
+        - name: cloudsql-server-ca
+          secret:
+            secretName: cloudsql-certificates
+            items:
+              - key: server-ca.pem
+                path: ca.pem
+        - name: cloudsql-client-key
+          secret:
+            secretName: cloudsql-certificates
+            items:
+              - key: client-key.pem
+                path: client-key.pem
+        - name: cloudsql-client-cert
+          secret:
+            secretName: cloudsql-certificates
+            items:
+              - key: client-cert.pem
+                path: client-cert.pem
+      imagePullSecrets:
+        - name: gcr

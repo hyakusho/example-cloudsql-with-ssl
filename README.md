@@ -2,6 +2,7 @@
 
 ## Prerequisite
 - docker
+- kubectl
 
 ## Docker
 1. docker-composeをビルド && 起動する
@@ -20,13 +21,14 @@ example-cloudsql-with-ssl_rails_1   /usr/local/bin/docker-entr ...   Up      0.0
 ```
 
 3. ブラウザから確認
+
 http://localhost:8080
 
 ## Kubernetes
-### development (local)
+### Development (Local)
 1. applyする
 ```
-% kubectl apply -f k8s/development.yaml
+% kubectl apply -k k8s/development
 ```
 
 2. 正常に起動したことを確認
@@ -43,6 +45,31 @@ service/rails-service   NodePort   10.96.223.32   <none>        80:30354/TCP   1
 ```
 
 3. ブラウザから確認 (ポートはserviceのポート番号)
+
 http://localhost:30354
 
-### production (GKE + CloudSQL with SSL)
+### Production (GKE)
+
+## CloudSQL with SSL
+ref. https://cloud.google.com/sql/docs/mysql/configure-ssl-instance?hl=ja
+
+### SSLを有効にする
+```
+gcloud sql instances patch [INSTANCE_NAME] --require-ssl
+```
+
+### クライアント証明書を作成する
+1. クライアント証明書を作成する
+```
+gcloud sql ssl client-certs create [CERT_NAME] client-key.pem --instance=[INSTANCE_NAME]
+```
+
+2. クライアント証明書の公開鍵を取得する
+```
+gcloud sql ssl client-certs describe [CERT_NAME] --instance=[INSTANCE_NAME] --format="value(cert)" > client-cert.pem
+```
+
+3. サーバー証明書を取得する
+```
+gcloud sql instances describe [INSTANCE_NAME]  --format="value(serverCaCert.cert)" > server-ca.pem
+```
