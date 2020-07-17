@@ -1,3 +1,4 @@
 *.pem
 *.swp
 k8s/production/secrets/*
+!k8s/production/secrets/.keep
