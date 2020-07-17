@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-cloudsql-with-ssl
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rails-service
+  namespace: example-cloudsql-with-ssl
+  labels:
+    app: rails
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: rails
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rails-deployment
+  namespace: example-cloudsql-with-ssl
+  labels:
+    app: rails
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rails
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: rails
+    spec:
+      containers:
+        - name: mysql
+          image: example-cloudsql-with-ssl_mysql
+          imagePullPolicy: Never
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: password
+          ports:
+            - name: mysql
+              containerPort: 3306
+            - name: mysqlx
+              containerPort: 33060
+          volumeMounts:
+            - name: mysql
+              mountPath: /var/lib/mysql
+        - name: rails
+          image: example-cloudsql-with-ssl_rails
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              value: mysql2://root:password@mysql
+            - name: RAILS_ENV
+              value: development
+          ports:
+            - name: rails
+              containerPort: 3000
+          volumeMounts:
+            - name: mysql
+              mountPath: /var/lib/mysql
+              readOnly: true
+        - name: nginx
+          image: example-cloudsql-with-ssl_nginx
+          imagePullPolicy: Never
+          ports:
+            - name: nginx
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "mysql"
+            - "rails"
+      volumes:
+        - name: mysql
+          hostPath:
+            path: example-cloudsql-with-ssl_mysql
+            type: DirectoryOrCreate

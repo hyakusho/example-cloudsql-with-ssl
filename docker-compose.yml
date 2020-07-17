@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  mysql:
+    build:
+      context: ./docker/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - ${DOCKER_MYSQL_PORT:-3306}:3306
+      - ${DOCKER_MYSQLX_PORT:-33060}:33060
+    volumes:
+      - type: volume
+        source: mysql
+        target: /var/lib/mysql
+  rails:
+    build:
+      context: ./docker/rails
+    depends_on:
+      - mysql
+    environment:
+      DATABASE_URL: mysql2://root:password@mysql
+      RAILS_ENV: development
+    ports:
+      - ${DOCKER_RAILS_PORT:-3000}:3000
+    volumes:
+      - type: volume
+        source: mysql
+        target: /var/lib/mysql
+  nginx:
+    build:
+      context: ./docker/nginx
+    depends_on:
+      - rails
+    ports:
+      - ${DOCKER_NGINX_PORT:-8080}:80
+volumes:
+  mysql:
